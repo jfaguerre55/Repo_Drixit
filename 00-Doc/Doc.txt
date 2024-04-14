@@ -1,0 +1,24 @@
+TODO:
+	Git
+		Crear REPO 
+		Crear branchs 
+
+	FreeRTOS
+		configASSERT()
+		Mutex
+		Semaphore
+			
+	NXP
+		Seleccionar uC
+			UART
+			SPI
+			I2C
+			UART
+			Soportar FreeRTOS 
+	ST
+		https://www.st.com/en/mems-and-sensors/lis3mdl.html
+		SPI o I2C 
+	
+	Winbond
+		https://www.winbond.com/hq/product/code-storage-flash-memory/serial-nor-flash/?__locale=en&partNo=W25Q80DV
+		SPI
