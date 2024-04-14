@@ -22,6 +22,17 @@
  */
 Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL,Sensor_LIS3MDL_Config_Init_t * sensorLIS3MDL_config){
 
+	i2c(ADDRESS_CTRL_REG1, 0b1001 1100);	// TEMP_EN=enable, OM=Low Power, DO=80Hz, ODR=off, ST=off
+	i2c(ADDRESS_CTRL_REG2, 0b0100 0000);	// FS=12gauss, REBOOT=RST=0
+	i2c(ADDRESS_CTRL_REG3, 0x0000 0001);	// LP=0, SIM=0, MD0=01 (single conversion)
+	i2c(ADDRESS_CTRL_REG4, 0x00);	// OMZ=Lox Power, BLE=0
+	i2c(ADDRESS_CTRL_REG5, 0x00);	// FR=disable, BDU=continuos
+
+	i2c(ADDRESS_INT_CFG, 0x00);		// INT disable s
+
+
+	return SENSOR_LIS3MDL_OK;
+
 }
 
 
@@ -33,6 +44,7 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL,Sensor_LIS
  */
 Sensor_LIS3MDL_Status_t LIS3MDL_Get_XYZT(Sensor_LIS3MDL_t * sensorLIS3MDL, int16_t (*values)[4]){
 
+	return SENSOR_LIS3MDL_OK;
 
 }
 
@@ -45,12 +57,15 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Get_XYZT(Sensor_LIS3MDL_t * sensorLIS3MDL, int16
  */
 Sensor_LIS3MDL_Status_t LIS3MDL_Get_Coord(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LIS3MDL_Coord_t coord, int16_t * value){
 
+	return SENSOR_LIS3MDL_OK;
+
 }
 
 
 Sensor_LIS3MDL_Status_t LIS3MDL_Reset(Sensor_LIS3MDL_t * sensorLIS3MDL){
 
 
+	return SENSOR_LIS3MDL_OK;
 }
 
 

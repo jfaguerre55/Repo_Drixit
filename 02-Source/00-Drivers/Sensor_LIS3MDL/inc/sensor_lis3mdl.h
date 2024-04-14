@@ -31,8 +31,28 @@
 	#include "MCU_LPC84x_definiciones.h"
 #endif
 
-
-
+// Control registres address
+#define 		ADDRESS_CTRL_REG1 		(0x20)
+#define 		ADDRESS_CTRL_REG2 		(0x21)
+#define 		ADDRESS_CTRL_REG3 		(0x22)
+#define 		ADDRESS_CTRL_REG4 		(0x23)
+#define 		ADDRESS_CTRL_REG5 		(0x24)
+// Status registres address
+#define 		ADDRESS_STATUS_REG 		(0x27)
+// Output registres address
+#define 		ADDRESS_OUT_X_L 		(0x28)
+#define 		ADDRESS_OUT_X_H 		(0x29)
+#define 		ADDRESS_OUT_Y_L 		(0x2A)
+#define 		ADDRESS_OUT_Y_H 		(0x2B)
+#define 		ADDRESS_OUT_Z_L 		(0x2C)
+#define 		ADDRESS_OUT_Z_H 		(0x2D)
+#define 		ADDRESS_OUT_T_L 		(0x2E)
+#define 		ADDRESS_OUT_T_H 		(0x2F)
+// Int registres address
+#define 		ADDRESS_INT_CFG			(0x30)
+#define 		ADDRESS_INT_SRC			(0x31)
+#define 		ADDRESS_INT_THS_L		(0x32)
+#define 		ADDRESS_INT_THS_H		(0x33)
 
 /**
  * @brief Sensor error data types
