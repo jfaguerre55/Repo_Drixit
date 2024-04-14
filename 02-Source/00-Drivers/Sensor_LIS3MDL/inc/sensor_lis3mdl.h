@@ -56,9 +56,12 @@
 
 
 #define		LIS3MDL_TRANSFER_BUFF_SIZE			(2)
-#define		LIS3MDL_INT_SGN_ISR_PRIORITY		(5)
+#define		LIS3MDL_DRDY_SGN_ISR_PRIORITY		(5)
 #define		LIS3MDL_RETRY_SEND_TIME_useg 		(3000)
 #define		LIS3MDL_MAX_RETRY_ATTEMPTS			(10)
+
+#define		LIS3MDL_RESET_COMMAND			(0x04)
+
 
 /**
  * @brief Sensor error data types
@@ -181,7 +184,7 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Reset_SM(Sensor_LIS3MDL_t * sensorLIS3MDL);
 /***************** Private prototypes ********************/
 /*********************************************************/
 void *  __LIS3MDL_Update_State_Machine(void * p_sensor);
-void * 	__LIS3MDL_INTn_Callback(void* p_sensor);
+void * 	__LIS3MDL_DRDY_Callback(void* p_sensor);
 void  	__LIS3MDL_Retry_Transfer(Sensor_LIS3MDL_t * sensorLIS3MDL);
 
 
