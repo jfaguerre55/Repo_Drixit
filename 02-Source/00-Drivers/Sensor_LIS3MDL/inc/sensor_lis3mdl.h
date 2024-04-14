@@ -54,11 +54,16 @@
 #define 		ADDRESS_INT_THS_L		(0x32)
 #define 		ADDRESS_INT_THS_H		(0x33)
 
+
+#define		LIS3MDL_TRANSFER_BUFF_SIZE			(2)
+#define		LIS3MDL_INT_SGN_ISR_PRIORITY		(5)
+#define		LIS3MDL_RETRY_SEND_TIME_useg 		(3000)
+#define		LIS3MDL_MAX_RETRY_ATTEMPTS			(10)
+
 /**
  * @brief Sensor error data types
  */
-typedef enum{SENSOR_LIS3MDL_OK, SENSOR_LIS3MDL_ERROR}	Sensor_LIS3MDL_Status_t;
-
+typedef enum{LIS3MDL_OK, LIS3MDL_ERROR}	Sensor_LIS3MDL_Status_t;
 
 
 /**
@@ -72,6 +77,26 @@ typedef enum{LIS3MDL_FS_4GS, LIS3MDL_FS_8GS, LIS3MDL_FS_12GS, LIS3MDL_FS_16GS}	S
  */
 typedef		enum{LIS3MDL_AXIS_X, LIS3MDL_AXIS_Y, LIS3MDL_AXIS_Z, LIS3MDL_AXIS_T}	Sensor_LIS3MDL_Coord_t;
 
+
+
+/**
+ * @brief States for state machine controller of the LIS3MDL sensor
+ */
+typedef enum{	LIS3MDL_ST_FREE,
+				LIS3MDL_ST_READING,
+				LIS3MDL_ST_RESETING,
+				LIS3MDL_ST_TRANSFER_ERROR
+} Sensor_LIS3MDL_State_t;
+
+
+/**
+ * @brief Events for state machine controller of the LIS3MDL sensor
+ */
+typedef enum{	LIS3MDL_EV_NONE,
+				LIS3MDL_EV_REQ_READ,
+				LIS3MDL_EV_REQ_RST,
+				LIS3MDL_EV_RESET_SYS
+} Sensor_LIS3MDL_Event_t;
 
 
 /**
@@ -94,12 +119,25 @@ typedef struct{
  */
 typedef struct{
 
-	// I2C Setup
+	// Hardware Setup
 	MCU_I2C_t						i2c_controller;			/*!< I2C controller */
 	uint8_t							i2c_address;			/*!< I2C address */
-	GPIO_t		  					intn;					/*!< */
+	GPIO_t		  					drdy;					/*!< Data ready pin */
 
+	// Process values
 	Sensor_LIS3MDL_Value_t			sensor_values;			/*!< Last sensor readings XYZ+temp*/
+
+
+	// State machine
+	uint8_t							timer_id;				/*!< id del timer para reenvio de tranferencias */
+	uint8_t							retry_counter;			/*!< Contador de intento de reenvios de tranferencias */
+	Sensor_LIS3MDL_State_t			state;					/*!< Estado actual del JS */
+	Sensor_LIS3MDL_Event_t			event;					/*!< Último evento recibido */
+	bool							pending_read;			/*!< flag para indicar que hay una lectura pendiente */
+	// Transfer buffers
+	uint8_t 						RxBuff[LIS3MDL_TRANSFER_BUFF_SIZE];
+	uint8_t 						TxBuff[LIS3MDL_TRANSFER_BUFF_SIZE];
+
 
 } Sensor_LIS3MDL_t;
 
@@ -112,8 +150,8 @@ typedef struct{
  */
 typedef struct{
 
-	num_puerto 			intn_port;				    /*!< Port INTn*/
-	num_bit             intn_bit;					/*!< Bit INTn*/
+	num_puerto 			drdy_port;				    /*!< Port DATA READY pin */
+	num_bit             drdy_bit;					/*!< Bit DATA READY pin*/
 
 	uint8_t				i2c_perif_num;				/*!< I2C perif number I2C */
 	uint8_t				i2c_priority;				/*!< I2C ISRs Priority */
@@ -135,14 +173,16 @@ typedef struct{
 /*********************************************************/
 Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL,Sensor_LIS3MDL_Config_Init_t * sensorLIS3MDL_config);
 Sensor_LIS3MDL_Status_t LIS3MDL_Get_XYZT(Sensor_LIS3MDL_t * sensorLIS3MDL, int16_t (*values)[4]);
-Sensor_LIS3MDL_Status_t LIS3MDL_Get_Coord(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LIS3MDL_Coord_t coord, int16_t * value);
-Sensor_LIS3MDL_Status_t LIS3MDL_Reset(Sensor_LIS3MDL_t * sensorLIS3MDL);
+Sensor_LIS3MDL_Status_t LIS3MDL_Get_Axis_Value(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LIS3MDL_Coord_t coord, int16_t * value);
+Sensor_LIS3MDL_Status_t LIS3MDL_Reset_HW(Sensor_LIS3MDL_t * sensorLIS3MDL);
+Sensor_LIS3MDL_Status_t LIS3MDL_Reset_SM(Sensor_LIS3MDL_t * sensorLIS3MDL);
 
 /*********************************************************/
 /***************** Private prototypes ********************/
 /*********************************************************/
 void *  __LIS3MDL_Update_State_Machine(void * p_sensor);
-
+void * 	__LIS3MDL_INTn_Callback(void* p_sensor);
+void  	__LIS3MDL_Retry_Transfer(Sensor_LIS3MDL_t * sensorLIS3MDL);
 
 
 #endif /* SENSOR_LIS3MDL_H_ */
