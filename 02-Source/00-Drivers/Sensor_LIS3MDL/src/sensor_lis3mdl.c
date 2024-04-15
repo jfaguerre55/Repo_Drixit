@@ -9,10 +9,12 @@
  *
  *  WEB: https://www.st.com/en/mems-and-sensors/lis3mdl.html
  *
+ * Dev address: SDO/SA1 pin is connected to ground -> 0001 1100 b  = 0x1C
+ * Dev address: SDO/SA1 pin is connected to VCC    -> 0001 1110 b  = 0x1E
+
  */
 
 #include "sensor_lis3mdl.h"
-
 
 /**
  * @brief	Sensor LIS3MDL initialization function
@@ -21,17 +23,6 @@
  * @return	Sensor_LIS3MDL_Status_t
  */
 Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LIS3MDL_Config_Init_t * sensorLIS3MDL_config){
-
-//	i2c(ADDRESS_CTRL_REG1, 0b1001 1100);	// TEMP_EN=enable, OM=Low Power, DO=80Hz, ODR=off, ST=off
-//	i2c(ADDRESS_CTRL_REG2, 0b0100 0000);	// FS=12gauss, REBOOT=RST=0
-//	i2c(ADDRESS_CTRL_REG3, 0x0000 0000);	// LP=0, SIM=0, MD0=01 (continuos conversion)
-//	i2c(ADDRESS_CTRL_REG4, 0x00);	// OMZ=Lox Power, BLE=0
-//	i2c(ADDRESS_CTRL_REG5, 0x00);	// FR=disable, BDU=continuos
-//
-//	i2c(ADDRESS_INT_CFG, 0x00);		// INT disable s
-
-// Dev address: SDO/SA1 pin is connected to ground -> 0001 1100 b  = 0x1C
-// Dev address: SDO/SA1 pin is connected to VCC    -> 0001 1110 b  = 0x1E
 
 	GPIO_Error_t gpio_err = GPIO_ERROR_t;
 	MCU_Status_t i2c_err = MCU_ERROR_t;
@@ -77,10 +68,8 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LI
 
 
 	// State machine entry point
-	sensorLIS3MDL->TxBuff[0] = ADDRESS_CTRL_REG2;		// Register Address
-	sensorLIS3MDL->TxBuff[1] = LIS3MDL_RESET_COMMAND;	// Data
-	sensorLIS3MDL->state = LIS3MDL_ST_RESETING;
-	sensorLIS3MDL->event = LIS3MDL_EV_RESET_SYS;
+	sensorLIS3MDL->state = LIS3MDL_ST_INIT;
+	sensorLIS3MDL->event = LIS3MDL_EV_NONE;
 	__LIS3MDL_Update_State_Machine((void *)sensorLIS3MDL);
 
 
@@ -273,6 +262,7 @@ void *  __LIS3MDL_Update_State_Machine(void * p_sensor){
 			sensorLIS3MDL->sensor_values.y = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[3] << 8) | sensorLIS3MDL->RxBuff[2]);
 			sensorLIS3MDL->sensor_values.z = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[5] << 8) | sensorLIS3MDL->RxBuff[4]);
 			sensorLIS3MDL->sensor_values.temp = (int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[7] << 8) | sensorLIS3MDL->RxBuff[6]);
+			//TODO: aca se podria implementar in filtro de las últimas N mediciones
 			if( sensorLIS3MDL->pending_read == false)
 				// Si no hay una lectura pendiente el estado es "free"
 				sensorLIS3MDL->state = LIS3MDL_ST_FREE;
@@ -334,12 +324,35 @@ void *  __LIS3MDL_Update_State_Machine(void * p_sensor){
 				break;
 			}
 			// Se pudo iniciar la transferencia: el estado es reseteando y se limpia el evento. Dentro de 300mseg deberia activarse INTn y va a ingresar un evento de read
-			GPIO_IRQ_Enable(&(sensorLIS3MDL->drdy));
 			sensorLIS3MDL->retry_counter = 0;
 			sensorLIS3MDL->state = LIS3MDL_ST_RESETING;
 			sensorLIS3MDL->event = LIS3MDL_EV_NONE;
 			break;
 		}
+		break;
+
+
+	case LIS3MDL_ST_INIT:
+		////////////////////////////////////////////////////////////////////////
+		/////////////////////////////  STATE: INIT   ///////////////////////////
+		////////////////////////////////////////////////////////////////////////
+		sensorLIS3MDL->TxBuff[0] = ADDRESS_CTRL_REG1;		// CTRL_REG1 Register Address
+		sensorLIS3MDL->TxBuff[1] = LIS3MDL_CTRL_REG1;		// CTRL_REG1 -> TEMP_EN=enable, OM=Low Power, DO=80Hz, ODR=off, ST=off
+		sensorLIS3MDL->TxBuff[2] = LIS3MDL_CTRL_REG2;		// CTRL_REG2 -> FS=12gauss, REBOOT=RST=0
+		sensorLIS3MDL->TxBuff[3] = LIS3MDL_CTRL_REG3;		// CTRL_REG3 -> LP=0, SIM=0, MD0=01 (continuos conversion)
+		sensorLIS3MDL->TxBuff[4] = LIS3MDL_CTRL_REG4;		// CTRL_REG4 -> OMZ=Lox Power, BLE=0
+		sensorLIS3MDL->TxBuff[5] = LIS3MDL_CTRL_REG5;		// CTRL_REG5 -> FR=disable, BDU=continuos
+		if(MCU_ERROR_t == MCU_I2C_Execute_Transfer(	&(sensorLIS3MDL->i2c_controller), sensorLIS3MDL->i2c_address, sensorLIS3MDL->TxBuff, 6, NULL, 0, __LIS3MDL_Update_State_Machine, p_sensor)){
+			// No se pudo inicar la escritura: no se cambia el estado ni el evento y se intenta la transferencia luego
+			__LIS3MDL_Retry_Transfer(sensorLIS3MDL);
+			break;
+		}
+		// Se pudo iniciar la transferencia: el estado es free y se limpia el evento
+		GPIO_IRQ_Enable(&(sensorLIS3MDL->drdy));
+		sensorLIS3MDL->retry_counter = 0;
+		sensorLIS3MDL->state = LIS3MDL_ST_FREE;
+		sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+		break;
 		break;
 
 	case LIS3MDL_ST_TRANSFER_ERROR:

@@ -60,7 +60,16 @@
 #define		LIS3MDL_RETRY_SEND_TIME_useg 		(3000)
 #define		LIS3MDL_MAX_RETRY_ATTEMPTS			(10)
 
-#define		LIS3MDL_RESET_COMMAND			(0x04)
+#define		LIS3MDL_RESET_COMMAND		(0x04)
+
+// Control register initial values
+// TODO: Do these values ​​need to be modified at run time? Better initial fixed values?
+// TODO: What if multiple instances of this sensor need to be created?
+#define 	LIS3MDL_CTRL_REG1 			(0b10011100)	// CTRL_REG1 -> TEMP_EN=enable, OM=Low Power, DO=80Hz, ODR=off, ST=off
+#define 	LIS3MDL_CTRL_REG2 			(0b01000000)	// CTRL_REG2 -> FS=12gauss, REBOOT=RST=0
+#define 	LIS3MDL_CTRL_REG3 			(0b00000000)	// CTRL_REG3 -> LP=0, SIM=0, MD0=01 (continuos conversion)
+#define 	LIS3MDL_CTRL_REG4 			(0b00000000)	// CTRL_REG4 -> OMZ=Lox Power, BLE=0
+#define 	LIS3MDL_CTRL_REG5 			(0b00000000)	// CTRL_REG5 -> FR=disable, BDU=continuos
 
 
 /**
@@ -86,6 +95,7 @@ typedef		enum{LIS3MDL_AXIS_X, LIS3MDL_AXIS_Y, LIS3MDL_AXIS_Z, LIS3MDL_AXIS_T}	Se
  * @brief States for state machine controller of the LIS3MDL sensor
  */
 typedef enum{	LIS3MDL_ST_FREE,
+				LIS3MDL_ST_INIT,
 				LIS3MDL_ST_READING,
 				LIS3MDL_ST_RESETING,
 				LIS3MDL_ST_TRANSFER_ERROR
