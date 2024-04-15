@@ -71,6 +71,7 @@
 #define 	LIS3MDL_CTRL_REG4 			(0b00000000)	// CTRL_REG4 -> OMZ=Lox Power, BLE=0
 #define 	LIS3MDL_CTRL_REG5 			(0b00000000)	// CTRL_REG5 -> FR=disable, BDU=continuos
 
+// TODO: Add divisor to get LSB/gauss!!!!
 
 /**
  * @brief Sensor error data types
