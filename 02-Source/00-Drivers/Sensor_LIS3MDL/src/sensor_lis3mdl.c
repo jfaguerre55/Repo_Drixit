@@ -34,7 +34,7 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LI
 	sensorLIS3MDL->sensor_values.y = 0;
 	sensorLIS3MDL->sensor_values.z = 0;
 	sensorLIS3MDL->sensor_values.temp = 0;
-	sensorLIS3MDL->i2c_address = sensorLIS3MDL_config->i2c_address;
+	sensorLIS3MDL->i2c_address = sensorLIS3MDL_config->i2c_address; // TODO: validate address 0x1C o 0x1E
 	sensorLIS3MDL->state = LIS3MDL_ST_FREE;
 	sensorLIS3MDL->event = LIS3MDL_EV_NONE;
 	sensorLIS3MDL->pending_read = false;
