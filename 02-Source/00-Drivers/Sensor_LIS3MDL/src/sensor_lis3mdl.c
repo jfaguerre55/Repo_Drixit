@@ -30,6 +30,8 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LI
 //
 //	i2c(ADDRESS_INT_CFG, 0x00);		// INT disable s
 
+// Dev address: SDO/SA1 pin is connected to ground -> 0001 1100 b  = 0x1C
+// Dev address: SDO/SA1 pin is connected to VCC    -> 0001 1110 b  = 0x1E
 
 	GPIO_Error_t gpio_err = GPIO_ERROR_t;
 	MCU_Status_t i2c_err = MCU_ERROR_t;
@@ -76,7 +78,7 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LI
 
 	// State machine entry point
 	sensorLIS3MDL->TxBuff[0] = ADDRESS_CTRL_REG2;		// Register Address
-	sensorLIS3MDL->TxBuff[1] = LIS3MDL_RESET_COMMAND;		// Data
+	sensorLIS3MDL->TxBuff[1] = LIS3MDL_RESET_COMMAND;	// Data
 	sensorLIS3MDL->state = LIS3MDL_ST_RESETING;
 	sensorLIS3MDL->event = LIS3MDL_EV_RESET_SYS;
 	__LIS3MDL_Update_State_Machine((void *)sensorLIS3MDL);
@@ -232,22 +234,123 @@ void *  __LIS3MDL_Update_State_Machine(void * p_sensor){
 		////////////////////////////////////////////////////////////////////////
 		/////////////////////////////  STATE: FREE   ///////////////////////////
 		////////////////////////////////////////////////////////////////////////
+		if(LIS3MDL_EV_REQ_READ == sensorLIS3MDL->event){
+			sensorLIS3MDL->TxBuff[0] = ADDRESS_OUT_X_L;		// Register Address
+			if(MCU_ERROR_t == MCU_I2C_Execute_Transfer(	&(sensorLIS3MDL->i2c_controller), sensorLIS3MDL->i2c_address, sensorLIS3MDL->TxBuff, 1, sensorLIS3MDL->RxBuff, 8, __LIS3MDL_Update_State_Machine, p_sensor)){
+				// No se pudo inicar la escritura: no se cambia el estado ni el evento y se intenta la transferencia luego
+				__LIS3MDL_Retry_Transfer(sensorLIS3MDL);
+				break;
+			}
+			// Se pudo iniciar la transferencia: el nuevo estado es leyendo. Se limpia el evento
+			sensorLIS3MDL->retry_counter = 0;
+			sensorLIS3MDL->state = LIS3MDL_ST_READING;
+			sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+			break;
+		}
+		if(LIS3MDL_EV_REQ_RST == sensorLIS3MDL->event){
+			sensorLIS3MDL->TxBuff[0] = ADDRESS_CTRL_REG2;		// Register Address
+			sensorLIS3MDL->TxBuff[1] = LIS3MDL_RESET_COMMAND;	// Data
+			if(MCU_ERROR_t == MCU_I2C_Execute_Transfer(	&(sensorLIS3MDL->i2c_controller), sensorLIS3MDL->i2c_address, sensorLIS3MDL->TxBuff, 2, NULL, 0, __LIS3MDL_Update_State_Machine, p_sensor)){
+				// No se pudo inicar la escritura: no se cambia el estado ni el evento y se intenta la transferencia luego
+				__LIS3MDL_Retry_Transfer(sensorLIS3MDL);
+				break;
+			}
+			// Se pudo iniciar la transferencia: el estado es reseteando y se limpia el evento
+			sensorLIS3MDL->retry_counter = 0;
+			sensorLIS3MDL->state = LIS3MDL_ST_RESETING;
+			sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+			break;
+		}
 		break;
 
 	case LIS3MDL_ST_READING:
 		////////////////////////////////////////////////////////////////////////
 		///////////////////////////// STATE: READING ///////////////////////////
 		////////////////////////////////////////////////////////////////////////
+		if(LIS3MDL_EV_NONE == sensorLIS3MDL->event){
+			// Reading cycle complete. Assemble the readings from de buffer.
+			sensorLIS3MDL->sensor_values.x = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[1] << 8) | sensorLIS3MDL->RxBuff[0]);
+			sensorLIS3MDL->sensor_values.y = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[3] << 8) | sensorLIS3MDL->RxBuff[2]);
+			sensorLIS3MDL->sensor_values.z = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[5] << 8) | sensorLIS3MDL->RxBuff[4]);
+			sensorLIS3MDL->sensor_values.temp = (int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[7] << 8) | sensorLIS3MDL->RxBuff[6]);
+			if( sensorLIS3MDL->pending_read == false)
+				// Si no hay una lectura pendiente el estado es "free"
+				sensorLIS3MDL->state = LIS3MDL_ST_FREE;
+			else{
+				// Si hay una lectura pendiente se debe iniciar otro ciclo de lectura
+				sensorLIS3MDL->pending_read = false;
+				sensorLIS3MDL->TxBuff[0] = ADDRESS_OUT_X_L;		// Register Address
+				if(MCU_ERROR_t == MCU_I2C_Execute_Transfer(	&(sensorLIS3MDL->i2c_controller), sensorLIS3MDL->i2c_address, sensorLIS3MDL->TxBuff, 1, sensorLIS3MDL->RxBuff, 8, __LIS3MDL_Update_State_Machine, p_sensor)){
+					// No se pudo inicar la escritura: se inicia el timer, se cambia el estado a free y el evento a read
+					sensorLIS3MDL->state = LIS3MDL_ST_FREE;
+					sensorLIS3MDL->event = LIS3MDL_EV_REQ_READ;
+					__LIS3MDL_Retry_Transfer(sensorLIS3MDL);
+					break;
+				}
+				// Se pudo iniciar la transferencia: el estado es leyendo y se limpia el evento
+				sensorLIS3MDL->retry_counter = 0;
+				sensorLIS3MDL->state = LIS3MDL_ST_READING;
+				sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+				break;
+			}
+			break;
+		}
+		if(LIS3MDL_EV_REQ_READ == sensorLIS3MDL->event){
+			// Si se está leyendo y vuelve a llegar DRDY se activa un flag para que al finalizar el ciclo actual de lectura se inicie otro
+			sensorLIS3MDL->pending_read = true;
+			sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+			break;
+		}
+		if(LIS3MDL_EV_REQ_RST == sensorLIS3MDL->event){
+			// Si se está leyendo el joystick y llega un request de Reset se ignora (el bus está ocupado)
+			sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+			break;
+		}
 		break;
+
 	case LIS3MDL_ST_RESETING:
 		////////////////////////////////////////////////////////////////////////
 		//////////////////////////// STATE: RESETING ///////////////////////////
 		////////////////////////////////////////////////////////////////////////
+		if(LIS3MDL_EV_REQ_READ == sensorLIS3MDL->event){
+			sensorLIS3MDL->TxBuff[0] = ADDRESS_OUT_X_L;		// Register Address
+			if(MCU_ERROR_t == MCU_I2C_Execute_Transfer(	&(sensorLIS3MDL->i2c_controller), sensorLIS3MDL->i2c_address, sensorLIS3MDL->TxBuff, 1, sensorLIS3MDL->RxBuff, 8, __LIS3MDL_Update_State_Machine, p_sensor)){
+				// No se pudo inicar la escritura: no se cambia el estado ni el evento y se intenta la transferencia luego
+				__LIS3MDL_Retry_Transfer(sensorLIS3MDL);
+				break;
+			}
+			// Se pudo iniciar la transferencia: el estado es leyendo y se limpia el evento
+			sensorLIS3MDL->retry_counter = 0;
+			sensorLIS3MDL->state = LIS3MDL_ST_READING;
+			sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+			break;
+		}
+		if(LIS3MDL_EV_REQ_RST == sensorLIS3MDL->event){
+			sensorLIS3MDL->TxBuff[0] = ADDRESS_CTRL_REG2;		// Register Address
+			sensorLIS3MDL->TxBuff[1] = LIS3MDL_RESET_COMMAND;	// Data
+			if(MCU_ERROR_t == MCU_I2C_Execute_Transfer(	&(sensorLIS3MDL->i2c_controller), sensorLIS3MDL->i2c_address, sensorLIS3MDL->TxBuff, 2, NULL, 0, __LIS3MDL_Update_State_Machine, p_sensor)){
+				// No se pudo inicar la escritura: no se cambia el estado ni el evento y se intenta la transferencia luego
+				__LIS3MDL_Retry_Transfer(sensorLIS3MDL);
+				break;
+			}
+			// Se pudo iniciar la transferencia: el estado es reseteando y se limpia el evento. Dentro de 300mseg deberia activarse INTn y va a ingresar un evento de read
+			GPIO_IRQ_Enable(&(sensorLIS3MDL->drdy));
+			sensorLIS3MDL->retry_counter = 0;
+			sensorLIS3MDL->state = LIS3MDL_ST_RESETING;
+			sensorLIS3MDL->event = LIS3MDL_EV_NONE;
+			break;
+		}
 		break;
+
 	case LIS3MDL_ST_TRANSFER_ERROR:
 		////////////////////////////////////////////////////////////////////////
 		/////////////////////// STATE: TRANSFER ERROR //////////////////////////
 		////////////////////////////////////////////////////////////////////////
+		if(LIS3MDL_EV_RESET_SYS == sensorLIS3MDL->event){
+			sensorLIS3MDL->state = LIS3MDL_ST_RESETING;
+			sensorLIS3MDL->event = LIS3MDL_EV_REQ_RST;
+			Timer_Manager_Restart_Event(sensorLIS3MDL->timer_id);
+		}
 		break;
 
 	default: break;
