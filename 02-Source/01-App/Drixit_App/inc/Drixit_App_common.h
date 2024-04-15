@@ -13,6 +13,7 @@
 #include "chip.h"
 #include <cr_section_macros.h>
 #include "sensor_lis3mdl.h"
+#include "flash_w25q80db.h"
 #include "leds.h"
 #include "sw_button.h"
 #include "MCU43xx_m4_UART_0_2_3.h"
