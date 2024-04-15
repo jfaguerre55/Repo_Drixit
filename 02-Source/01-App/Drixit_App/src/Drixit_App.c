@@ -26,21 +26,21 @@ Sensor_LIS3MDL_Config_Init_t	sensorLIS3MDL_config = {
 
 LED_t 				led_red;
 LED_Config_Init_t	led_red_config = {
-		2, 11, LED_RED,		// Port - Pin - Color
+		6, 11, LED_RED,		// Port - Pin - Color
 		LED_MODE_ONF,		// Modo (on/off o level)
 		LED_TURN_ON_1,		// Se prende por 1
 		100					// Level inicial
 };
 
 
-Sw_Button_t				tec1;
-void * 					TEC1_When_Pushed(void *);
-void *					TEC1_When_Release(void *);
-Sw_Button_Init_t		tec1_config = {
-		1 , 0,										// Port - Pin
+Sw_Button_t				swISP;
+void * 					swISP_When_Pushed(void * pvParameters);
+void *					swISP_When_Release(void * pvParameters);
+Sw_Button_Init_t		swISP_config = {
+		2 , 7,										// Port - Pin
 		SW_BUTTON_NA, SW_R_PULLUP, DEBOUNCE_ON,		// NO/NA - PullUp/PullDown - Debounce ON/OFF
-		TEC1_When_Pushed, NULL,						// Callback cuando se presiona y sus argumentos
-		TEC1_When_Release, NULL						// Callback cuando se libera y sus argumentos
+		swISP_When_Pushed, NULL,					// Callback cuando se presiona y sus argumentos
+		swISP_When_Release, NULL					// Callback cuando se libera y sus argumentos
 };
 
 MCU_UART_t 				uart;
@@ -50,16 +50,29 @@ void * uart_tx_cb(void * args);
 
 
 // FreeRTOS objects
-// Task prototypes
-void vTaskLedBlink(void * pvLed );
-void vTaskSensorAdquisitionData(void * pvParameters);
+// Task prototypes + Queues handlers + Mutex handlers
+void vTaskLedBlink(void * pvLed );							// Test Blinking LED
+
+// Sensor + memory management
+void vTaskSensorAdquisitionData(void * pvParameters);		// Aquisition task
+QueueHandle_t 		xSensorDataQueue;						// Sensor data buffer
+void vTaskMemoryWriteManager(void * pvParameters);			// Memory write task
+void vTaskMemoryReadManager(void * pvParameters);			// Memory read task
+SemaphoreHandle_t	xMemoryAccessMutex;						// Memory mutex
+
+// UART + GPIO management
 void vTaskButtonHMI(void * pvParameters);
-void vTaskCommunicationManager(void * pvParameters);
-// Queues handlers
-QueueHandle_t 		xSensorDataQueue;
+void vTaskUartRxManager(void * pvParameters);
+void vTaskUartTxManager(void * pvParameters);
+void vTaskUartRxManager(void * pvParameters);
+
+
+
 QueueHandle_t 		xIdRequestQueue;
-SemaphoreHandle_t	xButtonRequestSemaphore;
+SemaphoreHandle_t	xButtonRequestBufferSemaphore;
+#define 			BUTTON_REQUEST_MAX			(50)
 SemaphoreHandle_t	xUartRequestSemaphore;
+SemaphoreHandle_t	xUartTxMutex;
 
 
 
@@ -68,7 +81,7 @@ int main(void) {
     SystemCoreClockUpdate();
 
     LED_Config(&led_red,   	 &led_red_config);
-    SW_BUTTON_Config(&tec1, &tec1_config );
+    SW_BUTTON_Config(&swISP, &swISP_config );
 
     // General
     uart_config.mode		= MCU_UART_Mode_None;
@@ -81,10 +94,10 @@ int main(void) {
     uart_config.int_priority= 10;
     uart_config.rx_mode 	= MCU_UART_Rx_Mode_Buffer;
     // Pines uC (Tx - Rx - Dir)
-    uart_config.tx_port 	= 0;
-    uart_config.tx_pin 		= 25;
-    uart_config.rx_port 	= 0;
-    uart_config.rx_pin 		= 24;
+    uart_config.tx_port 	= 2;
+    uart_config.tx_pin 		= 0;
+    uart_config.rx_port 	= 2;
+    uart_config.rx_pin 		= 1;
     // RS485 support
     uart_config.rs485_add	= 0xFF;
     uart_config.dir_port 	= 255;
@@ -95,11 +108,11 @@ int main(void) {
     MCU_UART_Config_Tx_Callback(&uart, uart_tx_cb, NULL);
     MCU_UART_Enable_NVIC(&uart, 6);
 
-    LIS3MDL_Init(&sensorLIS3MDL, &sensorLIS3MDL_config);
+    //LIS3MDL_Init(&sensorLIS3MDL, &sensorLIS3MDL_config);
 
     // Semaphore
-    xButtonRequestSemaphore = xSemaphoreCreateBinary();
-    if( xButtonRequestSemaphore != NULL ){}
+    xButtonRequestBufferSemaphore = xSemaphoreCreateCounting(BUTTON_REQUEST_MAX, 0);
+    if( xButtonRequestBufferSemaphore != NULL ){}
 
     xUartRequestSemaphore = xSemaphoreCreateBinary();
     if( xUartRequestSemaphore != NULL ){}
@@ -111,10 +124,20 @@ int main(void) {
     xIdRequestQueue = xQueueCreate( 100, sizeof( uint32_t ) );
     if( xIdRequestQueue != NULL );
 
+    // Mutex
+    xMemoryAccessMutex = xSemaphoreCreateMutex();
+    if( xMemoryAccessMutex != NULL );
+
+    xUartTxMutex = xSemaphoreCreateMutex();
+	if( xUartTxMutex != NULL );
+
     xTaskCreate( vTaskLedBlink, "LedBlinkRed", configMINIMAL_STACK_SIZE, &led_red  , 1, NULL );
     xTaskCreate( vTaskSensorAdquisitionData, "AdquisitionSensorData", configMINIMAL_STACK_SIZE, NULL , 25, NULL );
     xTaskCreate( vTaskButtonHMI, "ButtonHMI", configMINIMAL_STACK_SIZE, NULL , 17, NULL );
-    xTaskCreate( vTaskCommunicationManager, "CommManager", configMINIMAL_STACK_SIZE, NULL , 20, NULL );
+//    xTaskCreate( vTaskUartRxManager, "CommManager", configMINIMAL_STACK_SIZE, NULL , 20, NULL );
+//
+    xTaskCreate( vTaskMemoryWriteManager, "MemotyWrite", configMINIMAL_STACK_SIZE, NULL , 5, NULL );
+//    xTaskCreate( vTaskMemoryReadManager, "MemotyWrite", configMINIMAL_STACK_SIZE, NULL , 10, NULL );
 
 
     vTaskStartScheduler();
@@ -129,10 +152,49 @@ int main(void) {
 
 
 
+void vTaskMemoryWriteManager(void * pvParameters)
+{
+	BaseType_t 		xStatus;
+	SensorData_t	sensor_data;
+	uint8_t 		p_byte=66;
+
+	for( ;; )
+	{
+		xSemaphoreTake( xMemoryAccessMutex, portMAX_DELAY );
+		{
+
+		xStatus = xQueueReceive( xSensorDataQueue, &sensor_data, portMAX_DELAY );
+		if( xStatus == pdPASS )	{}
+
+		MCU_UART_Send_Byte(&uart, &p_byte);
+		printf( "Writing ID=%d x=%d\n", sensor_data.id, sensor_data.values.x );
+//		MCU_UART_Send_Array(&uart, const uint8_t * array, uint32_t array_length);
+		}
+		xSemaphoreGive( xMemoryAccessMutex );
+	}
+
+}
+
+
+void vTaskMemoryReadManager(void * pvParameters)
+{
+
+	BaseType_t 		xStatus;
+
+	for( ;; )
+	{
+		xSemaphoreTake( xMemoryAccessMutex, portMAX_DELAY );
+		{
+		printf( "Reading" );
+		}
+		xSemaphoreGive( xMemoryAccessMutex );
+	}
+
+}
 
 
 
-void vTaskCommunicationManager(void * pvParameters)
+void vTaskUartRxManager(void * pvParameters)
 {
 
 	BaseType_t 		xStatus;
@@ -189,7 +251,10 @@ void vTaskLedBlink( void * pvLed )
 	 {
 		vTaskDelay(pdMS_TO_TICKS(500));
 		LED_Toogle((LED_t *)pvLed);
-		printf("Led Tabdbrbrsk\n");
+
+
+
+
 	 }
 }
 
@@ -200,6 +265,7 @@ void vTaskSensorAdquisitionData( void * pvParameters )
 	BaseType_t 		xStatus;
 	int16_t 		sensor_reading_buff[4];
 	SensorData_t	sensor_data;
+	uint32_t		id_counter=0;
 
 	for( ;; )
 	{
@@ -207,8 +273,9 @@ void vTaskSensorAdquisitionData( void * pvParameters )
 
 		LIS3MDL_Get_XYZT(&sensorLIS3MDL, &sensor_reading_buff);
 
-		sensor_data.id = 0;
-		sensor_data.values.x = 		sensor_reading_buff[0];
+		sensor_data.id = id_counter;
+		id_counter++;
+		sensor_data.values.x = 		55; //sensor_reading_buff[0];
 		sensor_data.values.y = 		sensor_reading_buff[1];
 		sensor_data.values.z = 		sensor_reading_buff[2];
 		sensor_data.values.temp = 	sensor_reading_buff[3];
@@ -232,7 +299,7 @@ void vTaskButtonHMI( void * pvParameters )
 	for( ;; )
 	{
 
-		 xSemaphoreTake( xButtonRequestSemaphore, portMAX_DELAY );
+		 xSemaphoreTake( xButtonRequestBufferSemaphore, portMAX_DELAY );
 
 		 xStatus = xQueueSendToBack( xIdRequestQueue, &id_req, 0 );
 		 if( xStatus != pdPASS ){}
@@ -242,11 +309,11 @@ void vTaskButtonHMI( void * pvParameters )
 
 
 
-void * TEC1_When_Pushed(void * p){
+void * swISP_When_Pushed(void * pvParameters){
 
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-	xSemaphoreGiveFromISR( xButtonRequestSemaphore, &xHigherPriorityTaskWoken );
+	xSemaphoreGiveFromISR( xButtonRequestBufferSemaphore, &xHigherPriorityTaskWoken );
 
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
@@ -254,7 +321,7 @@ void * TEC1_When_Pushed(void * p){
 }
 
 
-void * TEC1_When_Release(void * p){
+void * swISP_When_Release(void * pvParameters){
 
 
 	return NULL;
