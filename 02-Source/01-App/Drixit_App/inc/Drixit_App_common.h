@@ -25,13 +25,14 @@
 #include "semphr.h"
 
 
-typedef 	uint32_t 	Sensor_Sample_Id;		// 0xFFFFFFFF = last ID
+typedef 	uint32_t 	Sensor_Sample_Id;
 
 
 typedef struct{
-	Sensor_LIS3MDL_Value_t		values;
 	Sensor_Sample_Id			id;
-	uint32_t					reserved;	// Keep the structure aligned (usar para CRC ??)
+	Sensor_LIS3MDL_Value_t		values;
+	uint16_t					crc;
+	uint8_t						reserved[10];	// Keep the structure aligned. Size = 32 bytes
 } SensorData_t;
 
 

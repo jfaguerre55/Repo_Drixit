@@ -114,10 +114,13 @@ int main(void) {
     SensorData_t	sensor_data2;
 
 	sensor_data.id = i;
-	sensor_data.values.x = 		0;
-	sensor_data.values.y = 		1;
-	sensor_data.values.z = 		2;
-	sensor_data.values.temp = 	3;
+	sensor_data.values.x = 		0.0;
+	sensor_data.values.y = 		1.0;
+	sensor_data.values.z = 		2.0;
+	sensor_data.values.temp = 	3.0;
+	sensor_data.crc = 			0xFFFF;
+	for(i=0; i<10; i++)
+		sensor_data.reserved[i]	= 0x00;
 
     printf( "Id = %d\n", i);
 
@@ -127,31 +130,46 @@ int main(void) {
     // Reset Memory Mode and enter Command Mode
     MCU_SPIFI_Enter_Command_Mode();
 
+    // Erase memory sector 0
+    MCU_SPIFI_Erase_Sector(MCU43XX_SPIFI_BASE_ADDRESS);
+
     // Escribe SensorData_t bytes en la flash
-    for(i=0; i<11; i++){
-    	//	spifi_4K_write(MCU43XX_SPIFI_BASE_ADDRESS, (void *)&sensor_data, sizeof(SensorData_t) );
+    for(i=0; i<10; i++){
     	sensor_data.id = i;
-    	sensor_data.values.x ++;
-    	sensor_data.values.y ++;
-    	sensor_data.values.z ++;
-    	sensor_data.values.temp ++;
-		MCU_SPIFI_Write(MCU43XX_SPIFI_BASE_ADDRESS+ i*sizeof(SensorData_t), (void *)&sensor_data, sizeof(SensorData_t) );
+    	sensor_data.values.x += 2;
+    	sensor_data.values.y += 2;
+    	sensor_data.values.z += 2;
+    	sensor_data.values.temp += 2;
+    	MCU_SPIFI_Write_Page(MCU43XX_SPIFI_BASE_ADDRESS+ i*sizeof(SensorData_t), (void*)&sensor_data, sizeof(SensorData_t) );
     }
 
 	// Pone a la memoria en Memory Mode
     MCU_SPIFI_Enter_Memory_Mode();
 
 
-	for(i=0; i<11; i++){
+	for(i=0; i<10; i++){
 		sensor_data2=*(SensorData_t*)(MCU43XX_SPIFI_BASE_ADDRESS+i*sizeof(SensorData_t));
-		printf( "Id = %d X = %d Y = %d Z = %d  T = %d\n", sensor_data2.id, sensor_data2.values.x,
+		printf( "Id = %d X = %f Y = %f Z = %f  T = %f\n", sensor_data2.id, sensor_data2.values.x,
 				sensor_data2.values.y, sensor_data2.values.z, sensor_data2.values.temp);
 	}
 
 
+	MCU_SPIFI_Enter_Command_Mode();
+    for(i=10; i<20; i++){
+    	sensor_data.id = i;
+    	sensor_data.values.x += 2;
+    	sensor_data.values.y += 2;
+    	sensor_data.values.z += 2;
+    	sensor_data.values.temp += 2;
+    	MCU_SPIFI_Write_Page(MCU43XX_SPIFI_BASE_ADDRESS+ i*sizeof(SensorData_t), (void*)&sensor_data, sizeof(SensorData_t) );
+    }
 
-
-
+    MCU_SPIFI_Enter_Memory_Mode();
+	for(i=10; i<20; i++){
+		sensor_data2=*(SensorData_t*)(MCU43XX_SPIFI_BASE_ADDRESS+i*sizeof(SensorData_t));
+		printf( "Id = %d X = %f Y = %f Z = %f  T = %f\n", sensor_data2.id, sensor_data2.values.x,
+				sensor_data2.values.y, sensor_data2.values.z, sensor_data2.values.temp);
+	}
 
     //LIS3MDL_Init(&sensorLIS3MDL, &sensorLIS3MDL_config);
 
