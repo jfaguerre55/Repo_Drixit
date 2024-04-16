@@ -30,6 +30,7 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LI
 	if(sensorLIS3MDL == NULL || sensorLIS3MDL_config==NULL) return LIS3MDL_ERROR;
 
 	// Init internal struct data
+	sensorLIS3MDL->lsb_div = sensorLIS3MDL_config->lsb_div;
 	sensorLIS3MDL->sensor_values.x = 0;
 	sensorLIS3MDL->sensor_values.y = 0;
 	sensorLIS3MDL->sensor_values.z = 0;
@@ -258,10 +259,10 @@ void *  __LIS3MDL_Update_State_Machine(void * p_sensor){
 		////////////////////////////////////////////////////////////////////////
 		if(LIS3MDL_EV_NONE == sensorLIS3MDL->event){
 			// Reading cycle complete. Assemble the readings from de buffer.
-			sensorLIS3MDL->sensor_values.x = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[1] << 8) | sensorLIS3MDL->RxBuff[0]);
-			sensorLIS3MDL->sensor_values.y = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[3] << 8) | sensorLIS3MDL->RxBuff[2]);
-			sensorLIS3MDL->sensor_values.z = 	(int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[5] << 8) | sensorLIS3MDL->RxBuff[4]);
-			sensorLIS3MDL->sensor_values.temp = (int16_t)(((uint16_t)sensorLIS3MDL->RxBuff[7] << 8) | sensorLIS3MDL->RxBuff[6]);
+			sensorLIS3MDL->sensor_values.x = 	(float)(((uint16_t)sensorLIS3MDL->RxBuff[1] << 8) | sensorLIS3MDL->RxBuff[0])/sensorLIS3MDL->lsb_div;
+			sensorLIS3MDL->sensor_values.y = 	(float)(((uint16_t)sensorLIS3MDL->RxBuff[3] << 8) | sensorLIS3MDL->RxBuff[2])/sensorLIS3MDL->lsb_div;
+			sensorLIS3MDL->sensor_values.z = 	(float)(((uint16_t)sensorLIS3MDL->RxBuff[5] << 8) | sensorLIS3MDL->RxBuff[4])/sensorLIS3MDL->lsb_div;
+			sensorLIS3MDL->sensor_values.temp = (float)(((uint16_t)sensorLIS3MDL->RxBuff[7] << 8) | sensorLIS3MDL->RxBuff[6])/sensorLIS3MDL->lsb_div;
 			//TODO: aca se podria implementar in filtro de las últimas N mediciones
 			if( sensorLIS3MDL->pending_read == false)
 				// Si no hay una lectura pendiente el estado es "free"

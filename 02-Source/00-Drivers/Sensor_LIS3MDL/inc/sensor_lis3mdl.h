@@ -71,7 +71,16 @@
 #define 	LIS3MDL_CTRL_REG4 			(0b00000000)	// CTRL_REG4 -> OMZ=Lox Power, BLE=0
 #define 	LIS3MDL_CTRL_REG5 			(0b00000000)	// CTRL_REG5 -> FR=disable, BDU=continuos
 
-// TODO: Add divisor to get LSB/gauss!!!!
+
+/**
+ * @brief Divisor LSB/gauss
+ */
+typedef enum{
+ 	LIS3MDL_FS4_LSB_GAUSS = 6842,
+ 	LIS3MDL_FS8_LSB_GAUSS = 3421,
+ 	LIS3MDL_FS12_LSB_GAUSS 	= 2281,
+ 	LIS3MDL_FS16_LSB_GAUSS 	= 1711,
+} Sensor_LIS3MDL_FS_LSB_Div_t;
 
 /**
  * @brief Sensor error data types
@@ -118,10 +127,10 @@ typedef enum{	LIS3MDL_EV_NONE,
  */
 typedef struct{
 
-	int16_t		x;			/*!< X axis magnetic field */
-	int16_t		y;			/*!< Y axis magnetic field */
-	int16_t		z;			/*!< Z axis magnetic field */
-	int16_t 	temp;		/*!< Temperature */
+	float		x;			/*!< X axis magnetic field */
+	float		y;			/*!< Y axis magnetic field */
+	float		z;			/*!< Z axis magnetic field */
+	float	 	temp;		/*!< Temperature */
 
 } Sensor_LIS3MDL_Value_t;
 
@@ -139,6 +148,7 @@ typedef struct{
 	GPIO_t		  					drdy;					/*!< Data ready pin */
 
 	// Process values
+	Sensor_LIS3MDL_FS_LSB_Div_t		lsb_div;				/*!< LSB/gauss divisor*/
 	Sensor_LIS3MDL_Value_t			sensor_values;			/*!< Last sensor readings XYZ+temp*/
 
 
@@ -175,6 +185,8 @@ typedef struct{
 	uint8_t       		i2c_sda_bit;				/*!< Bit SDA */
 	uint8_t    			i2c_scl_port;				/*!< Port SCL */
 	uint8_t       		i2c_scl_bit;				/*!< Bit SCL */
+
+	Sensor_LIS3MDL_FS_LSB_Div_t		lsb_div;		/*!< LSB/gauss divisor*/
 
 } Sensor_LIS3MDL_Config_Init_t;
 
