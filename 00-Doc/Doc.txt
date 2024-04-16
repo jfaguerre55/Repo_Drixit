@@ -1,24 +1,28 @@
 TODO:
-	Git
-		Crear REPO 
-		Crear branchs 
 
 	FreeRTOS
 		configASSERT()
-		Mutex
-		Semaphore
+		taskENTER_CRITICAL()   taskEXIT_CRITICAL()
 			
 	NXP
-		Seleccionar uC
+		Selección uC
 			UART
-			SPI
+			SPIFI 
 			I2C
 			UART
 			Soportar FreeRTOS 
-	ST
+	LIS3MDL
 		https://www.st.com/en/mems-and-sensors/lis3mdl.html
 		SPI o I2C 
 	
 	Winbond
 		https://www.winbond.com/hq/product/code-storage-flash-memory/serial-nor-flash/?__locale=en&partNo=W25Q80DV
-		SPI
+		SPIFI
+	
+	Magnetic Sensor Samples (32bytes)
+		1 uint32_t	id		4bytes	
+		3 float 	XYZ		12bytes
+		1 float 	T		4bytes
+		1 uint16_t	CRC		2bytes
+		10 uint8_t	res		10bytes	
+		
