@@ -108,6 +108,51 @@ int main(void) {
     MCU_UART_Config_Tx_Callback(&uart, uart_tx_cb, NULL);
     MCU_UART_Enable_NVIC(&uart, 6);
 
+
+    uint8_t			i = 0;
+    SensorData_t	sensor_data;
+    SensorData_t	sensor_data2;
+
+	sensor_data.id = i;
+	sensor_data.values.x = 		55;
+	sensor_data.values.y = 		56;
+	sensor_data.values.z = 		57;
+	sensor_data.values.temp = 	24;
+
+    printf( "Id = %d\n", i);
+
+    // Configura los pines y el CTRL del SPIFI
+    spifi_init();
+
+    // Reset Memory Mode and enter Command Mode
+    spifi_command_mode();
+
+    // Escribe SensorData_t bytes en la flash
+    for(i=0; i<11; i++){
+    	//	spifi_4K_write(SPIFLASH_BASE_ADDRESS, 							(void *)&sensor_data, sizeof(SensorData_t) );
+    	sensor_data.id = i;
+    	sensor_data.values.x ++;
+    	sensor_data.values.y ++;
+    	sensor_data.values.z ++;
+    	sensor_data.values.temp ++;
+//		spifi_4K_write(SPIFLASH_BASE_ADDRESS+ i*sizeof(SensorData_t), (void *)&sensor_data, sizeof(SensorData_t) );
+    }
+
+	// Pone a la memoria en Memory Mode
+	spifi_memory_mode();
+
+
+	for(i=0; i<10; i++){
+		sensor_data2=*(SensorData_t*)(SPIFLASH_BASE_ADDRESS+i*sizeof(SensorData_t));
+		printf( "Id = %d X = %d Y = %d Z = %d  T = %d\n", sensor_data2.id, sensor_data2.values.x,
+				sensor_data2.values.y, sensor_data2.values.z, sensor_data2.values.temp);
+	}
+
+
+
+
+
+
     //LIS3MDL_Init(&sensorLIS3MDL, &sensorLIS3MDL_config);
 
     // Semaphore
@@ -140,7 +185,7 @@ int main(void) {
 //    xTaskCreate( vTaskMemoryReadManager, "MemotyWrite", configMINIMAL_STACK_SIZE, NULL , 10, NULL );
 
 
-    vTaskStartScheduler();
+//    vTaskStartScheduler();
 
     while(1) {
 

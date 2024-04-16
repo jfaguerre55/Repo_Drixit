@@ -17,6 +17,7 @@
 #include "leds.h"
 #include "sw_button.h"
 #include "MCU43xx_m4_UART_0_2_3.h"
+#include "MCU43xx_m4_SPIFI.h"
 #include "FreeRTOSConfig.h"
 #include "FreeRTOS.h"
 #include "task.h"
@@ -30,6 +31,7 @@ typedef 	uint32_t 	Sensor_Sample_Id;		// 0xFFFFFFFF = last ID
 typedef struct{
 	Sensor_LIS3MDL_Value_t		values;
 	Sensor_Sample_Id			id;
+	uint32_t					reserved;	// Keep the structure aligned (usar para CRC ??)
 } SensorData_t;
 
 
