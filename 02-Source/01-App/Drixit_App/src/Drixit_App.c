@@ -26,7 +26,7 @@ int main(void) {
 
 	// Check for correct system init
 	assert( !hw_sys_err || !os_sys_err );
-	while( hw_sys_err||os_sys_err );
+	while( hw_sys_err || os_sys_err );
 
     // Start FreeRTOS kernel
     vTaskStartScheduler();

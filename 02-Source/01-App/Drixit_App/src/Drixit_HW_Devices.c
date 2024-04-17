@@ -30,8 +30,8 @@ Sensor_LIS3MDL_Config_Init_t	sensorLIS3MDL_config = {
 
 
 
-LED_t 				led_red;
-LED_Config_Init_t	led_red_config = {
+LED_t 					led_red;
+LED_Config_Init_t		led_red_config = {
 		6, 11, LED_RED,		// Port - Pin - Color
 		LED_MODE_ONF,		// Modo (on/off o level)
 		LED_TURN_ON_1,		// Se prende por 1
@@ -62,8 +62,6 @@ void * swISP_When_Pushed(void * pvParameters){
 
 
 void * swISP_When_Release(void * pvParameters){
-
-
 	return NULL;
 }
 
@@ -84,9 +82,9 @@ MCU_UART_Init_Config_t 		uart_config={
 	.rx_mode 	= MCU_UART_Rx_Mode_Buffer,
 	// Pines uC (Tx - Rx - Dir)
 	.tx_port 	= 2,
-	.tx_pin 		= 0,
+	.tx_pin 	= 0,
 	.rx_port 	= 2,
-	.rx_pin 		= 1,
+	.rx_pin 	= 1,
 	// RS485 support
 	.rs485_add	= 0xFF,
 	.dir_port 	= 255,
@@ -94,6 +92,7 @@ MCU_UART_Init_Config_t 		uart_config={
 };
 
 
+/* UART Rx callback function. This cb will be executed when 4 bytes are received. */
 void * uart_rx_cb(void * pvParameters){
 
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -103,8 +102,6 @@ void * uart_rx_cb(void * pvParameters){
 	portYIELD_FROM_ISR( xHigherPriorityTaskWoken );
 
 	return NULL;
-
-
 }
 
 
@@ -115,11 +112,13 @@ void * uart_tx_cb(void * pvParameters){
 }
 
 
-
+/* Function to hardware init */
 bool System_Hardware_Init(void){
 
+	bool init_err = false;
 
     LED_Config(&led_red,   	 &led_red_config);
+
     SW_BUTTON_Config(&swISP, &swISP_config );
 
     MCU_UART_Config(&uart, &uart_config);
@@ -132,7 +131,7 @@ bool System_Hardware_Init(void){
 
     // Flash_W25Q80DB_Init(mem);
 
-	return false;
+	return init_err;
 
 }
 

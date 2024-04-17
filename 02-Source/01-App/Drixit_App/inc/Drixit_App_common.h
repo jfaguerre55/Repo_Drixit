@@ -39,23 +39,26 @@ typedef struct{
 
 
 // FreeRTOS tasks prototypes
-#define 	BUTTON_REQUEST_MAX			(50)
 void vTaskLedBlink(void * pvLed );							// Test Blinking LED
+/* Data handling tasks */
+void vTaskSensorAdqData(void * pvParameters);				// Aquisition task
 void vTaskMemoryWriter(void * pvParameters);				// Memory write task
 void vTaskMemoryReader(void * pvParameters);				// Memory read task
-void vTaskSensorAdquisitionData(void * pvParameters);		// Aquisition task
-void vTaskButtonHMI(void * pvParameters);
-void vTaskUartRxManager(void * pvParameters);
-void vTaskUartTxManager(void * pvParameters);
-void vTaskUartRxManager(void * pvParameters);
+/* Communication tasks */
+void vTaskUartReqManager(void * pvParameters);				// UART-rx. Task for handle IDs requests
+void vTaskUartRespManager(void * pvParameters);				// UART-tx. Task for handle IDs responses
+void vTaskButtonReqManager(void * pvParameters);			// Task for handle IDs requests from Sw button GPIO
+
 bool System_OS_Init(void);
 
 
-// Hardware prototypes
-void * swISP_When_Pushed(void * pvParameters);
-void * swISP_When_Release(void * pvParameters);
-void * uart_rx_cb(void * pvParameters);
-void * uart_tx_cb(void * pvParameters);
+// Hardware devices prototypes
+void * swISP_When_Pushed(void * pvParameters);				// Sw button pushed callback
+void * swISP_When_Release(void * pvParameters);				// Sw button release callback
+void * uart_rx_cb(void * pvParameters);						// UART rx callback
+void * uart_tx_cb(void * pvParameters);						// UART tx callback
 bool   System_Hardware_Init(void);
+
+
 
 #endif /* DRIXIT_APP_COMMON_H_ */

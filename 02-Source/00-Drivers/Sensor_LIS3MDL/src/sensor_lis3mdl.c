@@ -85,7 +85,7 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Init(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LI
  * @param	values				: pointer to array to return 4 readings
  * @return	Sensor_LIS3MDL_Status_t
  */
-Sensor_LIS3MDL_Status_t LIS3MDL_Get_XYZT(Sensor_LIS3MDL_t * sensorLIS3MDL, int16_t (*values)[4]){
+Sensor_LIS3MDL_Status_t LIS3MDL_Get_XYZT(Sensor_LIS3MDL_t * sensorLIS3MDL, float (*values)[4]){
 
 	if(sensorLIS3MDL == NULL) return LIS3MDL_ERROR;
 
@@ -105,7 +105,7 @@ Sensor_LIS3MDL_Status_t LIS3MDL_Get_XYZT(Sensor_LIS3MDL_t * sensorLIS3MDL, int16
  * @param	value					: pointer to 16 bit int to return the value
  * @return	Sensor_LIS3MDL_Status_t
  */
-Sensor_LIS3MDL_Status_t LIS3MDL_Get_Axis_Value(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LIS3MDL_Coord_t coord, int16_t * value){
+Sensor_LIS3MDL_Status_t LIS3MDL_Get_Axis_Value(Sensor_LIS3MDL_t * sensorLIS3MDL, Sensor_LIS3MDL_Coord_t coord, float * value){
 
 	if(sensorLIS3MDL == NULL) return LIS3MDL_ERROR;
 
