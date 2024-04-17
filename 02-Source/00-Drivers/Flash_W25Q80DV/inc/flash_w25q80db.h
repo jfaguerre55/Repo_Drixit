@@ -3,6 +3,11 @@
  *
  *  Created on: 15 abr. 2024
  *      Author: JuanAguerre
+ *
+ * Driver for W25Q80DV Winbond serial memory with SPIFI interface
+ *
+ * WEB: https://www.winbond.com/hq/product/code-storage-flash-memory/serial-nor-flash/?__locale=en&partNo=W25Q80DV
+ *
  */
 
 #ifndef FLASH_W25Q80DB_H_
@@ -54,6 +59,9 @@ typedef struct{
 
 
 
+/*********************************************************/
+/***************** Public prototypes *********************/
+/*********************************************************/
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem);
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t address, void * buff );
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t address, void * buff );

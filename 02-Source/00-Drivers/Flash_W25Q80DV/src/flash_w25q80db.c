@@ -1,14 +1,23 @@
 /*
- * flash_w25q80db.c
+ * flash_w25q80db.h
  *
  *  Created on: 15 abr. 2024
  *      Author: JuanAguerre
+ *
+ * Driver for W25Q80DV Winbond serial memory with SPIFI interface
+ *
+ * WEB: https://www.winbond.com/hq/product/code-storage-flash-memory/serial-nor-flash/?__locale=en&partNo=W25Q80DV
+ *
  */
 
 #include "flash_w25q80db.h"
 
 
-
+/**
+ * @brief	Memory driver initialization function
+ * @param	Flash_W25Q80DB_t			: pointer to sensor structure
+ * @return	Flash_W25Q80DB_Status_t
+ */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem){
 
 	if(mem == NULL) return FLASH_W25Q80_ERROR;
@@ -24,6 +33,14 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem){
 
 
 
+
+/**
+ * @brief	Memory driver write lot function
+ * @param	mem:	pointer to sensor structure
+ * @param	index:	index of the lot to be accessed
+ * @param	buff:	pointer to FLASH_W25Q80_LOT_SIZE array of bytes
+ * @return	Flash_W25Q80DB_Status_t
+ */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t index, void * buff ){
 
 	if(mem == NULL || index >= FLASH_W25Q80_LOT_TOT) return FLASH_W25Q80_ERROR;
@@ -45,7 +62,13 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32
 
 
 
-
+/**
+ * @brief	Memory driver read lot function
+ * @param	mem: 	pointer to sensor structure
+ * @param	index:	index of the lot to be accessed
+ * @param	buff:	pointer to FLASH_W25Q80_LOT_SIZE array of bytes
+ * @return	Flash_W25Q80DB_Status_t
+ */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t index, void * buff ){
 
 	if(mem == NULL) return FLASH_W25Q80_ERROR;
@@ -62,7 +85,13 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_
 
 
 
-
+/**
+ * @brief	Memory driver lot index getter function
+ * @param	mem: 		pointer to sensor structure
+ * @param	lot_index:	pointer to variable to return the actual memory index (last index used in a W operation)
+ * @note	This getter allow the user to advance the index and write the memory in the progresive manner
+ * @return	Flash_W25Q80DB_Status_t
+ */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Index(Flash_W25Q80DB_t * mem, uint32_t * lot_index){
 
 	if(mem == NULL) return FLASH_W25Q80_ERROR;
@@ -73,7 +102,12 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Index(Flash_W25Q80DB_t * mem
 }
 
 
-
+/**
+ * @brief	Memory driver Sector getter function
+ * @param	mem: 			pointer to sensor structure
+ * @param	sector_index:	pointer to variable to return the actual memory sector (last sector used in a W operation)
+ * @return	Flash_W25Q80DB_Status_t
+ */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Sector(Flash_W25Q80DB_t * mem, uint32_t * sector_index){
 
 	if(mem == NULL) return FLASH_W25Q80_ERROR;
