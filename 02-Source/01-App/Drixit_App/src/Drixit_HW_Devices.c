@@ -28,6 +28,7 @@ Sensor_LIS3MDL_Config_Init_t	sensorLIS3MDL_config = {
 };
 
 
+Flash_W25Q80DB_t	flash_W25Q80DB;
 
 
 LED_t 					led_red;
@@ -127,9 +128,9 @@ bool System_Hardware_Init(void){
     MCU_UART_Config_Tx_Callback(&uart, uart_tx_cb, NULL);
     MCU_UART_Enable_NVIC(&uart, 6);
 
-    // LIS3MDL_Init(&sensorLIS3MDL, &sensorLIS3MDL_config);
+    LIS3MDL_Init(&sensorLIS3MDL, &sensorLIS3MDL_config);
 
-    // Flash_W25Q80DB_Init(mem);
+    Flash_W25Q80DB_Init(&flash_W25Q80DB);
 
 	return init_err;
 

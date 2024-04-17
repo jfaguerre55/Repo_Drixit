@@ -14,6 +14,8 @@
 extern Sensor_LIS3MDL_t				sensorLIS3MDL;
 extern Sensor_LIS3MDL_Config_Init_t	sensorLIS3MDL_config;
 
+extern Flash_W25Q80DB_t				flash_W25Q80DB;
+
 extern LED_t 						led_red;
 extern LED_Config_Init_t			led_red_config;
 
@@ -65,16 +67,20 @@ void vTaskSensorAdqData( void * pvParameters )
 		LIS3MDL_Get_XYZT(&sensorLIS3MDL, &sensor_reading_buff);
 
 		/* Construct the SensorData_t type */
-		//TODO: construct the ID
-		sensor_data.id = id_counter++;
+		sensor_data.id = id_counter;
 		sensor_data.values.x = 		sensor_reading_buff[0];
 		sensor_data.values.y = 		sensor_reading_buff[1];
 		sensor_data.values.z = 		sensor_reading_buff[2];
 		sensor_data.values.temp = 	sensor_reading_buff[3];
-		sensor_data.crc = 0xFFFF;
+		sensor_data.crc = 			0xFFFF;		// TODO: implement CRC calculation
+		sensor_data.err =			DATA_ERR_NONE;
 
-		/* Send the reading to the queu */
+
+		/* Send the reading to the queue */
 		xQueueSendToBack( xSensorDataQueue, &sensor_data, 0 );
+
+		/* Increment the ID*/
+		id_counter++;
 	}
 }
 
@@ -94,9 +100,8 @@ void vTaskMemoryWriter(void * pvParameters)
 		/* Try to take control of the flash memory to save the sensor reading */
 		xSemaphoreTake( xMemoryAccessMutex, portMAX_DELAY );
 		{
-			//TODO: memory access
-			// Flash_W25Q80DB_Write_Array();
-			printf( "Writing Flash ID=%d x=%d\n", sensor_data.id, sensor_data.values.x );
+			Flash_W25Q80DB_Write_Lot(&flash_W25Q80DB, sensor_data.id, (void*)&sensor_data );
+//			printf( "Writing Flash ID=%d x=%d\n", sensor_data.id, sensor_data.values.x );
 		}
 		xSemaphoreGive( xMemoryAccessMutex );
 
@@ -115,21 +120,31 @@ void vTaskMemoryWriter(void * pvParameters)
 /* Memory manager writer task. This task waits for sensor data and save it into the flash memory */
 void vTaskMemoryReader(void * pvParameters)
 {
-	Sensor_Sample_Id	id_req;
+	Sensor_Sample_Id	req_id, last_id;
 	SensorData_t 		sensor_data;
 
 	for( ;; )
 	{
 		/* Read ID request from queue */
-		xQueueReceive( xIdRequestQueue, &id_req, portMAX_DELAY );
+		xQueueReceive( xIdRequestQueue, &req_id, portMAX_DELAY );
 
-		/* Try to take control of the flash memory to read de IDs values */
-		xSemaphoreTake( xMemoryAccessMutex, portMAX_DELAY );
+		/* Read the last index written in the memory */
+		Flash_W25Q80DB_Get_Current_Index(&flash_W25Q80DB, &last_id);
+		if(req_id <= last_id) /* The id will be present in the memory */
 		{
-			// Flash_W25Q80DB_Read_Array(&sensor_data);
-			//TODO: memory access
+			/* Try to take control of the flash memory to read de IDs associated data */
+			xSemaphoreTake( xMemoryAccessMutex, portMAX_DELAY );
+			{
+				Flash_W25Q80DB_Read_Lot(&flash_W25Q80DB, req_id, (void*)&sensor_data );
+			}
+			xSemaphoreGive( xMemoryAccessMutex );
+			// TODO: validate CRC after read from memory
 		}
-		xSemaphoreGive( xMemoryAccessMutex );
+		else
+		{
+			sensor_data.id = req_id;
+			sensor_data.err = DATA_ERR_INVALID_ID;
+		}
 
 		/* Send ID+value to response queue */
 		xQueueSendToBack( xIdResponseQueue, &sensor_data, portMAX_DELAY );

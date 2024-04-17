@@ -26,7 +26,7 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem){
 	mem->sector_index = FLASH_W25Q80_LOT_TOT+1;	// Starts out of range to force erase the first sector to be written
 
 	MCU_SPIFI_Init();
-	MCU_SPIFI_Reset();
+//	MCU_SPIFI_Reset();
 
 	return FLASH_W25Q80_OK;
 }
