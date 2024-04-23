@@ -41,7 +41,7 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem){
  * @param	buff:	pointer to FLASH_W25Q80_LOT_SIZE array of bytes
  * @return	Flash_W25Q80DB_Status_t
  */
-Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t index, void * buff ){
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t index, Flash_W25Q80DB_Lot_t * lot ){
 
 	if(mem == NULL || index >= FLASH_W25Q80_LOT_TOT) return FLASH_W25Q80_ERROR;
 
@@ -54,7 +54,7 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32
 	mem->lot_index = index;
 
 	MCU_SPIFI_Enter_Command_Mode();
-	MCU_SPIFI_Write_Page(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_LOT_SIZE*index , buff, FLASH_W25Q80_LOT_SIZE);
+	MCU_SPIFI_Write_Page(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_LOT_SIZE*index , (void*)lot, FLASH_W25Q80_LOT_SIZE);
 
 	return FLASH_W25Q80_OK;
 }
@@ -69,16 +69,13 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32
  * @param	buff:	pointer to FLASH_W25Q80_LOT_SIZE array of bytes
  * @return	Flash_W25Q80DB_Status_t
  */
-Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t index, void * buff ){
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t index, Flash_W25Q80DB_Lot_t * lot){
 
 	if(mem == NULL) return FLASH_W25Q80_ERROR;
 
-	uint32_t i=0;
 	MCU_SPIFI_Enter_Memory_Mode();
 
-	for(i=0; i< FLASH_W25Q80_LOT_SIZE; i++){
-		((uint8_t*)buff)[i] = ((uint8_t*)(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_LOT_SIZE*index))[i];
-	}
+	*lot = *((Flash_W25Q80DB_Lot_t*)(FLASH_W25Q80_BASE_ADDRESS+FLASH_W25Q80_LOT_SIZE*index));
 
 	return FLASH_W25Q80_OK;
 }

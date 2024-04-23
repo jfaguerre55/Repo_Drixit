@@ -100,7 +100,7 @@ void vTaskMemoryWriter(void * pvParameters)
 		/* Try to take control of the flash memory to save the sensor reading */
 		xSemaphoreTake( xMemoryAccessMutex, portMAX_DELAY );
 		{
-			Flash_W25Q80DB_Write_Lot(&flash_W25Q80DB, sensor_data.id, (void*)&sensor_data );
+			Flash_W25Q80DB_Write_Lot(&flash_W25Q80DB, sensor_data.id,(Flash_W25Q80DB_Lot_t*)&sensor_data );
 //			printf( "Writing Flash ID=%d x=%d\n", sensor_data.id, sensor_data.values.x );
 		}
 		xSemaphoreGive( xMemoryAccessMutex );
@@ -135,7 +135,7 @@ void vTaskMemoryReader(void * pvParameters)
 			/* Try to take control of the flash memory to read de IDs associated data */
 			xSemaphoreTake( xMemoryAccessMutex, portMAX_DELAY );
 			{
-				Flash_W25Q80DB_Read_Lot(&flash_W25Q80DB, req_id, (void*)&sensor_data );
+				Flash_W25Q80DB_Read_Lot(&flash_W25Q80DB, req_id, (Flash_W25Q80DB_Lot_t*)&sensor_data );
 			}
 			xSemaphoreGive( xMemoryAccessMutex );
 			// TODO: validate CRC after read from memory

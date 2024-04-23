@@ -59,12 +59,20 @@ typedef struct{
 
 
 
+typedef struct{
+
+	uint8_t		lot[FLASH_W25Q80_LOT_SIZE];		/* Memory lot data type */
+
+} Flash_W25Q80DB_Lot_t;
+
+
+
 /*********************************************************/
 /***************** Public prototypes *********************/
 /*********************************************************/
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem);
-Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t address, void * buff );
-Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t address, void * buff );
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t address, Flash_W25Q80DB_Lot_t * lot );
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t address, Flash_W25Q80DB_Lot_t * lot );
 
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Index(Flash_W25Q80DB_t * mem, uint32_t * lot_index);
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Sector(Flash_W25Q80DB_t * mem, uint32_t * sector_index);
