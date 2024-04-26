@@ -27,12 +27,14 @@
 
 
 
-// Drixit App definitions
+/* Drixit App definitions */
 #define 	DATA_ERR_NONE			(0x00)
 #define 	DATA_ERR_INVALID_DATA	(0x01)
 #define 	DATA_ERR_INVALID_ID		(0x02)
 #define 	DATA_ERR_INVALID_CRC	(0x03)
 typedef 	uint32_t 	Sensor_Sample_Id;
+
+/* Sensor data memory struct */
 typedef struct{
 	Sensor_Sample_Id			id;				// Unique id asigned to the sensor data
 	Sensor_LIS3MDL_Value_t		values;			// XYZT float values from the sensor
@@ -43,7 +45,7 @@ typedef struct{
 
 
 
-// FreeRTOS tasks prototypes
+/* FreeRTOS tasks prototypes */
 void vTaskLedBlink(void * pvLed );							// Test Blinking LED
 /* Data handling tasks */
 void vTaskSensorAdqData(void * pvParameters);				// Aquisition task
