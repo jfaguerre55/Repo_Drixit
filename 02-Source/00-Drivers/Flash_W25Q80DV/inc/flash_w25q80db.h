@@ -34,6 +34,12 @@
  */
 typedef enum{FLASH_W25Q80_OK, FLASH_W25Q80_ERROR}	Flash_W25Q80DB_Status_t;
 
+/**
+ * @brief Memory error data types
+ */
+typedef enum{FLASH_W25Q80_MODE_COMMAND, FLASH_W25Q80_MODE_MEMORY}	Flash_W25Q80DB_Mode_t;
+
+
 
 
 /**
@@ -52,8 +58,9 @@ typedef enum{FLASH_W25Q80_OK, FLASH_W25Q80_ERROR}	Flash_W25Q80DB_Status_t;
  */
 typedef struct{
 
-	uint32_t		lot_index;		/* Index of the next lot to be written */
-	uint32_t		sector_index;	/* Current memory sector index */
+	Flash_W25Q80DB_Mode_t	mode;			/* Current memory mode: i- command mode (write/erase) or ii- memory mode (high performance read) */
+	uint32_t				lot_index;		/* Index of the next lot to be written */
+	uint32_t				sector_index;	/* Current memory sector index */
 
 } Flash_W25Q80DB_t;
 
@@ -61,7 +68,7 @@ typedef struct{
 
 typedef struct{
 
-	uint8_t		lot[FLASH_W25Q80_LOT_SIZE];		/* Memory lot data type */
+	uint8_t		data[FLASH_W25Q80_LOT_SIZE];		/* Memory lot data type */
 
 } Flash_W25Q80DB_Lot_t;
 
@@ -71,10 +78,11 @@ typedef struct{
 /***************** Public prototypes *********************/
 /*********************************************************/
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem);
-Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t address, Flash_W25Q80DB_Lot_t * lot );
-Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t address, Flash_W25Q80DB_Lot_t * lot );
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t address, Flash_W25Q80DB_Lot_t * lot);
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot_Array(Flash_W25Q80DB_t * mem, uint32_t index, Flash_W25Q80DB_Lot_t * lots, size_t size);
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t address, Flash_W25Q80DB_Lot_t * lot);
 
-Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Index(Flash_W25Q80DB_t * mem, uint32_t * lot_index);
+Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Free_Index(Flash_W25Q80DB_t * mem, uint32_t * lot_index);
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Sector(Flash_W25Q80DB_t * mem, uint32_t * sector_index);
 
 
