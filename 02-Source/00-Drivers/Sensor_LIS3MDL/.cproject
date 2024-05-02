@@ -55,6 +55,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_43xx/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_43xx/inc/config_43xx}&quot;"/>
 								</option>
+								<option id="com.crt.advproject.gcc.lib.debug.option.optimization.level.1442551770" superClass="com.crt.advproject.gcc.lib.debug.option.optimization.level" useByScannerDiscovery="true"/>
 								<inputType id="com.crt.advproject.compiler.input.1753303109" superClass="com.crt.advproject.compiler.input"/>
 							</tool>
 							<tool id="com.crt.advproject.gas.lib.debug.654106366" name="MCU Assembler" superClass="com.crt.advproject.gas.lib.debug">
@@ -202,4 +203,6 @@
 	<storageModule moduleId="com.crt.advproject">
 		<boardId>LPCXpresso4367</boardId>
 	</storageModule>
+	<storageModule moduleId="openCmsis"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>

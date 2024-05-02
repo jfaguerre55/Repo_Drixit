@@ -52,6 +52,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_43xx/inc}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/lpc_chip_43xx/inc/config_43xx}&quot;"/>
 								</option>
+								<option id="com.crt.advproject.gcc.lib.debug.option.optimization.level.282508784" superClass="com.crt.advproject.gcc.lib.debug.option.optimization.level" useByScannerDiscovery="true"/>
 								<inputType id="com.crt.advproject.compiler.input.439606687" superClass="com.crt.advproject.compiler.input"/>
 							</tool>
 							<tool id="com.crt.advproject.gas.lib.debug.1091234008" name="MCU Assembler" superClass="com.crt.advproject.gas.lib.debug">
@@ -122,6 +123,7 @@
 								</option>
 								<option id="com.crt.advproject.gcc.fpu.1204333828" name="Floating point" superClass="com.crt.advproject.gcc.fpu" useByScannerDiscovery="true" value="com.crt.advproject.gcc.fpu.fpv4" valueType="enumerated"/>
 								<option id="com.crt.advproject.gcc.hdrlib.178958146" name="Library headers" superClass="com.crt.advproject.gcc.hdrlib" useByScannerDiscovery="false" value="Redlib" valueType="enumerated"/>
+								<option id="com.crt.advproject.gcc.lib.release.option.optimization.level.141930593" superClass="com.crt.advproject.gcc.lib.release.option.optimization.level"/>
 								<inputType id="com.crt.advproject.compiler.input.1770909789" superClass="com.crt.advproject.compiler.input"/>
 							</tool>
 							<tool id="com.crt.advproject.gas.lib.release.690381281" name="MCU Assembler" superClass="com.crt.advproject.gas.lib.release">
@@ -201,4 +203,5 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="com.crt.advproject.GCCManagedMakePerProjectProfile"/>
 		</scannerConfigBuildInfo>
 	</storageModule>
+	<storageModule moduleId="openCmsis"/>
 </cproject>
