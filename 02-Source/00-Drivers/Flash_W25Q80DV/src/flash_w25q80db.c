@@ -46,25 +46,24 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem){
  */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t index, Flash_W25Q80DB_Lot_t * lot){
 
-	uint32_t	sector_index_new = 0ul;
+	uint32_t	sector_new = 0ul;
 
-	if(mem == NULL || index >= FLASH_W25Q80_LOT_TOT) return FLASH_W25Q80_ERROR;
+	if(mem==NULL || index >= FLASH_W25Q80_LOT_PER_MEM || lot==NULL) return FLASH_W25Q80_ERROR;
 
 	/* If index selects a new sector, this sector must be erased */
-	sector_index_new = (FLASH_W25Q80_LOT_SIZE*index)/FLASH_W25Q80_SECTOR_SIZE;
-	if(mem->sector_index != sector_index_new){
-		mem->sector_index = sector_index_new;
+	sector_new = (FLASH_W25Q80_LOT_SIZE*index)/FLASH_W25Q80_SECTOR_SIZE;
+	if(mem->sector_index != sector_new){
+		mem->sector_index = sector_new;
 		MCU_SPIFI_Enter_Command_Mode();
 		mem->mode = FLASH_W25Q80_MODE_COMMAND;
-		MCU_SPIFI_Erase_Sector(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_SECTOR_SIZE*sector_index_new);
+		MCU_SPIFI_Erase_Sector(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_SECTOR_SIZE * sector_new);
 	}
 
 	/* Write the lot */
 	MCU_SPIFI_Enter_Command_Mode();
 	mem->mode = FLASH_W25Q80_MODE_COMMAND;
-	mem->lot_index = index + 1;
 	MCU_SPIFI_Write_Page(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_LOT_SIZE*index , (void*)lot, FLASH_W25Q80_LOT_SIZE);
-
+	mem->lot_index = index + 1;
 
 	return FLASH_W25Q80_OK;
 }
@@ -81,23 +80,42 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32
  */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot_Array(Flash_W25Q80DB_t * mem, uint32_t index, Flash_W25Q80DB_Lot_t * lots, size_t size){
 
-	uint32_t	sector_index_new = 0ul;
+	uint32_t	sector_new = 0ul;
+	uint32_t	i = 0ul;
 
-	if(mem == NULL || index >= FLASH_W25Q80_LOT_TOT) return FLASH_W25Q80_ERROR;
+	if(mem == NULL || index >= FLASH_W25Q80_LOT_PER_MEM || lots==NULL || size==0) return FLASH_W25Q80_ERROR;
 
-	/* If index selects a new sector, this sector must be erased */
-	sector_index_new = (FLASH_W25Q80_LOT_SIZE*index)/FLASH_W25Q80_SECTOR_SIZE;
-	if(mem->sector_index != sector_index_new){
-		mem->sector_index = sector_index_new;
+	/* All write operation must be done in command mode */
+	if(mem->mode != FLASH_W25Q80_MODE_COMMAND){
 		MCU_SPIFI_Enter_Command_Mode();
 		mem->mode = FLASH_W25Q80_MODE_COMMAND;
-		MCU_SPIFI_Erase_Sector(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_SECTOR_SIZE * sector_index_new);
 	}
 
-	// Previo a escribir, hay que borrar todos los sector involucrados menos el actual
-	// El controlador debe:
-	//		- Asumir que el sector que contiene la direccion de escritura está en uso (no hay que borrarlo)
-	//		- Si se va a pasar del sector actual, borrar los sectores siguientes que sean necesarios
+	/* Loop to erase all necesary sectors of the memory */
+	for(i=index; i<index+size ; i=(i|0x7F)+1){ 		// i|0x7F => i redondeado para arriba hasta el multiplo mas cercano de 128
+		sector_new = (FLASH_W25Q80_LOT_SIZE*i)/FLASH_W25Q80_SECTOR_SIZE;
+		if(mem->sector_index != sector_new){
+			mem->sector_index = sector_new;
+			MCU_SPIFI_Erase_Sector(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_SECTOR_SIZE * sector_new);
+		}
+	}
+
+	/* Write the lots */
+	MCU_SPIFI_Write_Segment(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_LOT_SIZE*index , (void*)lots, FLASH_W25Q80_LOT_SIZE*size);
+	mem->lot_index = index + size;
+
+	return FLASH_W25Q80_OK;
+}
+
+
+
+
+
+
+// Previo a escribir, hay que borrar todos los sector involucrados menos el actual
+// El controlador debe:
+//		- Asumir que el sector que contiene la direccion de escritura está en uso (no hay que borrarlo)
+//		- Si se va a pasar del sector actual, borrar los sectores siguientes que sean necesarios
 //	uint32_t	SA = 0;			// Sector Address
 //	uint32_t	LSA = 0;		// Local Sector Address
 //	SA  = address_dest & (~0xFFF);		// When the lasts 12 bits are 0's it is the address of the sector
@@ -109,18 +127,6 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot_Array(Flash_W25Q80DB_t * mem, 
 //		for(i=1; i<BUFF_SIZE; i++)
 //			MCU_SPIFI_Erase_Sector(SA + i*FLASH_W25Q80_SECTOR_SIZE);
 //	}
-
-
-
-	/* Write the lots */
-	MCU_SPIFI_Enter_Command_Mode();
-	mem->mode = FLASH_W25Q80_MODE_COMMAND;
-	mem->lot_index = index + size;
-	MCU_SPIFI_Write_Segment(FLASH_W25Q80_BASE_ADDRESS + FLASH_W25Q80_LOT_SIZE*index , (void*)lots, FLASH_W25Q80_LOT_SIZE*size);
-
-	return FLASH_W25Q80_OK;
-}
-
 
 
 

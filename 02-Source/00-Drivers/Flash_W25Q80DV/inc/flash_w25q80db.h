@@ -25,7 +25,9 @@
 #define		FLASH_W25Q80_PAGE_SIZE			(256)			// 256 bytes
 
 #define		FLASH_W25Q80_LOT_SIZE			(32)			// 32 bytes
-#define		FLASH_W25Q80_LOT_TOT			(FLASH_W25Q80_SECTOR_SIZE/FLASH_W25Q80_LOT_SIZE)			// 32 bytes
+#define		FLASH_W25Q80_LOT_PER_SECTOR		(FLASH_W25Q80_SECTOR_SIZE/FLASH_W25Q80_LOT_SIZE)		// 128 lot/sector
+#define		FLASH_W25Q80_LOT_PER_BLOCK		(FLASH_W25Q80_BLOCK_SIZE/FLASH_W25Q80_LOT_SIZE)			// 2k lot/sector
+#define		FLASH_W25Q80_LOT_PER_MEM		(FLASH_W25Q80_MEM_SIZE/FLASH_W25Q80_LOT_SIZE)			// 32k lot/mem
 
 
 
@@ -50,11 +52,13 @@ typedef enum{FLASH_W25Q80_MODE_COMMAND, FLASH_W25Q80_MODE_MEMORY}	Flash_W25Q80DB
  * 		2- Las operaciones de Write deben estar alineadas en 32 bytes
  * 		3- La memoria tiene:
  * 			whole: 1Mb/32bytes = 32k lotes
+ * 			block: 64k/32bytes = 2k lotes
  * 			sector:	4k/32bytes = 128 lotes
+ * 			page: 256bytes/32bytes = 8 lotes
  * 		4- La memoria se direcciona por un index del lote (de 0 a 32k-1)
- * 		5- Si el index del lote que se quiere escribir no coincide el driver de la memoria realiza un erase del lote completo
- * 		6- La escritura de la memoria debe hacerse de forma progresiva. Desde el index  0 al 32k-1.
- * 		7- Si se intenta escribir en otro sector distinto al actual se va a borrar el contenido completo del sector
+ * 		5- La escritura de la memoria debe hacerse de forma progresiva. Desde el index  0 al 32k-1.
+ * 		6- El driver tiene el ultimo indice sobre el que se escribió y el sector al que pertenece y
+ * 			si se intenta escribir en otro sector distinto al actual se va a borrar el contenido completo del sector
  */
 typedef struct{
 
@@ -65,7 +69,10 @@ typedef struct{
 } Flash_W25Q80DB_t;
 
 
-
+/**
+ * @brief Flash memory lot data type
+ * @notes
+ */
 typedef struct{
 
 	uint8_t		data[FLASH_W25Q80_LOT_SIZE];		/* Memory lot data type */
