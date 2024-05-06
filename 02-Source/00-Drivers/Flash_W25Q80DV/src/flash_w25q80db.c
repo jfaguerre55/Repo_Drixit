@@ -41,7 +41,7 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Init(Flash_W25Q80DB_t * mem){
  * @brief	Memory driver function to write a lot
  * @param	mem:	pointer to memory structure
  * @param	index:	memory index to write the lot
- * @param	buff:	pointer to the lot to be written
+ * @param	buff:	pointer to the lot to write
  * @return	Flash_W25Q80DB_Status_t
  */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32_t index, Flash_W25Q80DB_Lot_t * lot){
@@ -73,8 +73,8 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot(Flash_W25Q80DB_t * mem, uint32
 /**
  * @brief	Memory driver function to write an array of lots
  * @param	mem:	pointer to memory structure
- * @param	index:	memory index to write the lots
- * @param	lots:	pointer to array of lots
+ * @param	index:	memory index where to write the lots
+ * @param	lots:	pointer to the lot's array to write
  * @param	size:	number of lots to write
  * @return	Flash_W25Q80DB_Status_t
  */
@@ -111,35 +111,16 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Write_Lot_Array(Flash_W25Q80DB_t * mem, 
 
 
 
-
-// Previo a escribir, hay que borrar todos los sector involucrados menos el actual
-// El controlador debe:
-//		- Asumir que el sector que contiene la direccion de escritura está en uso (no hay que borrarlo)
-//		- Si se va a pasar del sector actual, borrar los sectores siguientes que sean necesarios
-//	uint32_t	SA = 0;			// Sector Address
-//	uint32_t	LSA = 0;		// Local Sector Address
-//	SA  = address_dest & (~0xFFF);		// When the lasts 12 bits are 0's it is the address of the sector
-//	LSA = address_dest & 0xFFF;			// Last 12 bits indicate the address into the sector
-//	FLASH_W25Q80_SECTOR_SIZE - LSA;		// Cuantos bytes entrarian en este sector
-//	if ( BUFF_SIZE > (FLASH_W25Q80_SECTOR_SIZE - LSA) )	{	// Si lo que quiero escribir es mas que lo que entra en el sector actual
-//		( BUFF_SIZE - (FLASH_W25Q80_SECTOR_SIZE - LSA)  + 0xFFF)  / FLASH_W25Q80_SECTOR_SIZE;	// Cuantos sectores en total se usarian
-//
-//		for(i=1; i<BUFF_SIZE; i++)
-//			MCU_SPIFI_Erase_Sector(SA + i*FLASH_W25Q80_SECTOR_SIZE);
-//	}
-
-
-
 /**
  * @brief	Memory driver read lot function
  * @param	mem: 	pointer to memory structure
  * @param	index:	index of the lot to be accessed
- * @param	buff:	pointer to FLASH_W25Q80_LOT_SIZE array of bytes
+ * @param	buff:	pointer to Flash_W25Q80DB_Lot_t variable
  * @return	Flash_W25Q80DB_Status_t
  */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_t index, Flash_W25Q80DB_Lot_t * lot){
 
-	if(mem == NULL) return FLASH_W25Q80_ERROR;
+	if(mem == NULL || lot == NULL ) return FLASH_W25Q80_ERROR;
 
 	if(mem->mode != FLASH_W25Q80_MODE_MEMORY){
 		mem->mode = FLASH_W25Q80_MODE_MEMORY;
@@ -154,7 +135,7 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_
 
 
 /**
- * @brief	Memory driver lot index getter function (returns the next index to the last written).
+ * @brief	Memory driver lot index getter function (returns the last written lot plus one).
  * @param	mem: 		pointer to memory structure
  * @param	lot_index:	pointer to variable to return the actual memory index (last index used in a W operation)
  * @note	This getter allows the user to get the next free index and write the memory in the progresive manner
@@ -162,7 +143,7 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Read_Lot(Flash_W25Q80DB_t * mem, uint32_
  */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Free_Index(Flash_W25Q80DB_t * mem, uint32_t * lot_index){
 
-	if(mem == NULL) return FLASH_W25Q80_ERROR;
+	if(mem == NULL || lot_index == NULL) return FLASH_W25Q80_ERROR;
 
 	*lot_index = mem->lot_index;
 
@@ -178,7 +159,7 @@ Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Free_Index(Flash_W25Q80DB_t * mem, u
  */
 Flash_W25Q80DB_Status_t 	Flash_W25Q80DB_Get_Current_Sector(Flash_W25Q80DB_t * mem, uint32_t * sector_index){
 
-	if(mem == NULL) return FLASH_W25Q80_ERROR;
+	if(mem == NULL || sector_index == NULL) return FLASH_W25Q80_ERROR;
 
 	*sector_index = mem->sector_index;
 

@@ -45,9 +45,9 @@ typedef enum{FLASH_W25Q80_MODE_COMMAND, FLASH_W25Q80_MODE_MEMORY}	Flash_W25Q80DB
 
 
 /**
- * @brief Flash memory W25Q80DB data type
+ * @brief Flash memory W25Q80DB type
  * @notes
- * 		0- El driver está diseñado para utilizar la memoria R/W en pequeños lotes de 32 bytes para guardar datos (ID+VALOR)
+ * 		0- El driver está diseñado para utilizar la memoria R/W en pequeños lotes de 32 bytes para guardar datos
  * 		1- Las operaciones de RW se realizan por lotes de 32 bytes (en cada página de la memoria entran 8 lotes)
  * 		2- Las operaciones de Write deben estar alineadas en 32 bytes
  * 		3- La memoria tiene:
@@ -57,8 +57,8 @@ typedef enum{FLASH_W25Q80_MODE_COMMAND, FLASH_W25Q80_MODE_MEMORY}	Flash_W25Q80DB
  * 			page: 256bytes/32bytes = 8 lotes
  * 		4- La memoria se direcciona por un index del lote (de 0 a 32k-1)
  * 		5- La escritura de la memoria debe hacerse de forma progresiva. Desde el index  0 al 32k-1.
- * 		6- El driver tiene el ultimo indice sobre el que se escribió y el sector al que pertenece y
- * 			si se intenta escribir en otro sector distinto al actual se va a borrar el contenido completo del sector
+ * 		6- El driver mantiene el ultimo indice sobre el que se escribió y el sector al que pertenece.
+ * 		7- Si se intenta escribir en otro sector distinto al actual se va a borrar el contenido completo del sector
  */
 typedef struct{
 
